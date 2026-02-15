@@ -1,65 +1,110 @@
-import Image from "next/image";
+"use client"
 
-export default function Home() {
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
+import { Badge } from "@/components/ui/badge"
+import { format, parseISO, isAfter, isBefore } from "date-fns"
+
+interface StoredChallenge {
+  id: string
+  name: string
+  share_token: string
+  end_date: string
+  start_date: string
+  visitedAt: string
+}
+
+export default function HomePage() {
+  const [recentChallenges, setRecentChallenges] = useState<StoredChallenge[]>([])
+
+  useEffect(() => {
+    const stored = localStorage.getItem("agora_recent_challenges")
+    if (stored) {
+      try {
+        setRecentChallenges(JSON.parse(stored))
+      } catch {
+        // ignore
+      }
+    }
+  }, [])
+
+  function getChallengeStatus(start: string, end: string) {
+    const now = new Date()
+    const startDate = parseISO(start)
+    const endDate = parseISO(end)
+    if (isBefore(now, startDate)) return "upcoming"
+    if (isAfter(now, endDate)) return "ended"
+    return "active"
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="mx-auto max-w-2xl px-4 py-8">
+      <div className="flex items-start justify-between mb-8">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">Agora</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Group fitness challenges, simplified.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <Button size="sm" asChild>
+          <Link href="/challenge/new">New challenge</Link>
+        </Button>
+      </div>
+
+      <Separator className="mb-6" />
+
+      {recentChallenges.length === 0 ? (
+        <div className="py-16 text-center">
+          <div className="text-4xl mb-4">🏆</div>
+          <p className="text-sm text-muted-foreground">No challenges yet.</p>
+          <p className="text-sm text-muted-foreground mt-1 mb-6">
+            Create one or ask someone for their challenge link.
+          </p>
+          <Button asChild>
+            <Link href="/challenge/new">Create a challenge</Link>
+          </Button>
         </div>
-      </main>
+      ) : (
+        <div className="space-y-px">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+            Recent challenges
+          </p>
+          {recentChallenges
+            .sort((a, b) => new Date(b.visitedAt).getTime() - new Date(a.visitedAt).getTime())
+            .map((c) => {
+              const status = getChallengeStatus(c.start_date, c.end_date)
+              return (
+                <Link
+                  key={c.id}
+                  href={`/challenge/${c.share_token}`}
+                  className="flex items-center justify-between py-3 px-2 rounded-md hover:bg-muted transition-colors -mx-2"
+                >
+                  <div>
+                    <p className="text-sm font-medium">{c.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {format(parseISO(c.start_date), "MMM d")} –{" "}
+                      {format(parseISO(c.end_date), "MMM d, yyyy")}
+                    </p>
+                  </div>
+                  <Badge
+                    variant={status === "active" ? "default" : "secondary"}
+                    className="text-xs font-normal"
+                  >
+                    {status}
+                  </Badge>
+                </Link>
+              )
+            })}
+        </div>
+      )}
+
+      <div className="mt-16 pt-6 border-t text-center">
+        <p className="text-xs text-muted-foreground">
+          Have a challenge link? Just open it to join.
+        </p>
+      </div>
     </div>
-  );
+  )
 }
