@@ -119,7 +119,7 @@ export function CreateChallengeForm() {
       .single()
 
     if (challengeErr || !challengeData) {
-      setError("Failed to create challenge. Please try again.")
+      setError(challengeErr?.message ?? "Failed to create challenge. Please try again.")
       setSubmitting(false)
       return
     }
