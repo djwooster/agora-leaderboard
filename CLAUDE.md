@@ -85,19 +85,18 @@ logs          id, participant_id, metric_id, value, log_date, created_at
 - Never return `admin_token` in any client-facing query other than the admin page itself.
 
 ## Supabase Connection
-Two connection strings are needed — both use the **pooler** (not the direct IPv6 host):
+Both connection strings use the **pooler** (not the direct IPv6 host, which is unreachable on most networks).
 
-- `DATABASE_URL` — Transaction pooler, port **6543** (used by the app at runtime)
-  `postgresql://postgres.[ref]:[password]@[region].pooler.supabase.com:6543/postgres`
-
-- `DIRECT_URL` — Session pooler, port **5432** (used for migrations / schema changes).
-  The IPv6 direct host (`db.[ref].supabase.co`) is often unreachable. Use session pooler:
-  `postgresql://postgres.[ref]:[password]@[region].pooler.supabase.com:5432/postgres`
+- Project ref: `czjhefnewbnajoirtfso`
+- Region: `aws-0-us-west-2` (Oregon)
+- Session pooler (port 5432) — used for migrations:
+  `postgresql://postgres.czjhefnewbnajoirtfso:[password]@aws-0-us-west-2.pooler.supabase.com:5432/postgres`
+- Transaction pooler (port 6543) — if needed for high-concurrency runtime use:
+  `postgresql://postgres.czjhefnewbnajoirtfso:[password]@aws-0-us-west-2.pooler.supabase.com:6543/postgres`
 
 Special characters in the password must be URL-encoded: `$` → `%24`, `@` → `%40`, `#` → `%23`
 
-The project ref is `czjhefnewbnajoirtfso`. Region and exact pooler hostname are in the
-Supabase dashboard under **Settings → Database → Connection string**.
+To re-run the schema: `DB_DIRECT_URL="postgresql://postgres.czjhefnewbnajoirtfso:[password]%24@aws-0-us-west-2.pooler.supabase.com:5432/postgres" node scripts/migrate.mjs`
 
 ## Environment Variables
 ```
